@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os,sys
-import sqlite3, time, re
+import sqlite3, time, re, requests
 
 
 HTTP1_REFERENCE= "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt"
@@ -21,15 +21,22 @@ PREFIX = [
     "socks5 127.0.0.1 9050"
 ]
 
-def Test_proxy(Ip,Port,type):
- cmd='curl --proxy "'+type+'://'+Ip+':'+Port+' "https://httpbin.org/ip"'
- #os.system('curl --proxy "'+type+'://'+Ip+':'+Port+' "https://httpbin.org/ip"')
- return 1
+def Test_proxy(Ip,Port,typo):
+  proxy= {typo : typo+"://"+Ip+":"+Port}
+  #print(proxy)
+  response= requests.get("https://ifconfig.me/ip", proxies=proxy)
+  if "200" in str(response):
+   print("OK for: "+Ip)
+   return 1
+  else:
+   print("skip: "+Ip)
+   return 0
 
 def Read_source(url,f,typo):
  flag =0;
  sup_file="sup_file.txt"
  os.system("wget -O sup_file.txt " + url)
+ print("Evaluation...")
  with open(sup_file) as file:
   for line in file:
    Ip=line.split(':')[0].strip()
@@ -39,7 +46,7 @@ def Read_source(url,f,typo):
  os.system("rm "+sup_file)
 
 
-def Gen_conf():
+def Gen_conf(Dest):
   working_file="working_file.txt"
   f = open("working_file", "a")
   for line in PREFIX:
@@ -47,5 +54,13 @@ def Gen_conf():
   Read_source(HTTP1_REFERENCE,f,"http")
   f.close()
   print("New Proxy Config file created")
+  os.system("cp working_file "+Dest)
+  os.system("rm working_file")
 
-Gen_conf()
+
+if len(sys.argv) > 1:
+ Dest= sys.argv[1]
+else:
+ Dest= FileName
+print("I will write on "+Dest)
+Gen_conf(Dest)
